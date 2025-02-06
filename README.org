@@ -81,18 +81,20 @@ Elisp list specific translations.
 | ~s * n~ or ~n * s~                      | ~(cl-loop repeat n append s)~, ~(apply #'append (make-list n s))~ | ~cl-loop~ needs ~(require 'cl-lib)~.                               |
 | ~x in s~                              | ~(member x s)~                                                  | ~member~ can be used if ~cmp~ is ~equal~.                            |
 | ~x not in s~                          | ~(not (member x s))~                                            | ~member~ can be used if ~cmp~ is ~equal~.                            |
+| ~s + t~                               | ~(seq-concatenate 'list s t)~, ~(append s t)~                     |                                                                |
 | ~s[0]~                                | ~(car s)~                                                       |                                                                |
 | ~s[-n]~                               | ~(car (last s))~                                                |                                                                |
+
 
 *** Non-Mutating Python Sequence to Elisp Vector Translations
 
 Elisp vector specific translations.
 
-| Python Sequence | Elisp Vector      | Notes |
-|-----------------+-------------------+-------|
-| ~s = []~          | ~(setq s (vector))~ |       |
-| ~s + t~           | ~(vconcat s t)~     |       |
-| ~s[i]~            | ~(aref s i)~        |       |
+| Python Sequence | Elisp Vector                               | Notes |
+|-----------------+--------------------------------------------+-------|
+| ~s = []~          | ~(setq s (vector))~                          |       |
+| ~s + t~           | ~(seq-concatenate 'vector s t)~, ~(vconcat s t)~ |       |
+| ~s[i]~            | ~(aref s i)~                                 |       |
 
 *** Non-Mutating Python Sequence to Elisp Sequence Translations
 
@@ -102,7 +104,6 @@ These translations work on either Elisp list or vector types.
 |-------------------------+--------------------------------------+----------------------------------------------|
 | ~x in s~                  | ~(seq-contains-p s x #'cmp)~           | Make sure ~cmp~ will compare the element type! |
 | ~x not in s~              | ~(not (seq-contains-p s x #'cmp))~     | Make sure ~cmp~ will compare the element type! |
-| ~s + t~                   | ~(seq-concatenate 'list s t)~          |                                              |
 | ~map(lambda a: a * n, s)~ | ~(seq-map (lambda (a) (* n a)) s)~     |                                              |
 | ~s[i]~                    | ~(seq-elt s i)~                        |                                              |
 | ~s[i:j]~                  | ~(seq-subseq s i j)~                   |                                              |
