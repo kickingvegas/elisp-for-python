@@ -2,7 +2,9 @@
 
 This document is for readers who are familiar with the Python programming language and wish to apply that knowledge to writing Emacs Lisp (Elisp). It is intended to be a “cheat sheet”/quick reference and should not be considered a primary source for either Python or Emacs APIs. 
 
-❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged. 
+❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged.
+
+Version: 0.2.0
 
 * Table of Contents                                                   :TOC_3:
 - [[#elisp-cheatsheet-for-python-programmers][Elisp Cheatsheet for Python Programmers]]
@@ -10,8 +12,12 @@ This document is for readers who are familiar with the Python programming langua
 - [[#collections][Collections]]
   - [[#comparison-functions][Comparison Functions]]
   - [[#sequence-types][Sequence Types]]
-    - [[#python-list-to-elisp-list][Python List to Elisp List]]
-    - [[#python-tuple-to-elisp-vector][Python Tuple to Elisp Vector]]
+    - [[#non-mutating-python-sequence-to-elisp-list-translations][Non-Mutating Python Sequence to Elisp List Translations]]
+    - [[#non-mutating-python-sequence-to-elisp-vector-translations][Non-Mutating Python Sequence to Elisp Vector Translations]]
+    - [[#non-mutating-python-sequence-to-elisp-sequence-translations][Non-Mutating Python Sequence to Elisp Sequence Translations]]
+    - [[#mutating-python-sequence-to-elisp-list-translations][Mutating Python Sequence to Elisp List Translations]]
+    - [[#mutating-python-sequence-to-elisp-vector-translations][Mutating Python Sequence to Elisp Vector Translations]]
+    - [[#mutating-python-sequence-to-elisp-sequence-translations][Mutating Python Sequence to Elisp Sequence Translations]]
   - [[#map-types][Map Types]]
     - [[#python-dictionary-to-elisp-hash-table][Python Dictionary to Elisp Hash Table]]
     - [[#python-dictionary-to-elisp-association-list-alist][Python Dictionary to Elisp Association List (alist)]]
@@ -34,100 +40,124 @@ This document is for readers who are familiar with the Python programming langua
 In Elisp, the comparison function used to disambiguate elements in a sequence-type collection or keys in a map-type collection is /significant/. When in doubt, it is better to specify the comparison function than trust (hope) that the default comparison function will behave to developer intent. [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Equality-Predicates.html][Info (elisp) Equality Predicates]] details the built-in comparison functions.
 
 That said, here is some general guidance. Use the comparison function:
-- ~eql~ if you want to compare numbers or symbols.
-- ~equal~ if you want to compare strings.
+- ~=~ to compare numbers
+- ~eq~ to compare object identity.
+- ~eql~ to compare numbers but also take into account /type/. For example comparing an integer to its numerically equivalent float will return ~nil~.
+- ~equal~ to compare if the objects have equal components. 
+
+| Python | Elisp | Notes |
+|--------+-------+-------|
+| ~is~     | ~eq~    |       |
+| ~==~     | ~equal~ |       |
 
 Depending on the type of object to compare, you may have to resort to writing a custom comparison function.
 
-Python shields you from this implementation detail. Unfortunately Elisp does not.
-
 ** Sequence Types
-*** Python List to Elisp List
 
-The Elisp *list* type is a /linked-list/ data structure. Elisp analogs to the Python *list* methods to handle insertion, appending, and updating are left to the developer to implement. Arguably, the omission of these functions is reluctance on the part of Emacs Core to make the trade-off design decisions required to implement them.
+There are three basic sequence types in Python: list, tuple, and range. This document will cover only Elisp translation of Python list and tuple types and subsequent reference to Python sequences should be understood to not include range. For Elisp sequence types, this document will cover list and vector types.
+
+The Elisp *list* type is a tree data structure with a /linked-list/ style abstraction for accessing its nodes. Elisp also offers a general purpose array type called a [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Vectors.html][vector]].
+
+The following legend describes types for variables used in the translations.
 
 #+begin_example
-s: list
+s: sequence
 x: any
-t: list
+t: sequence
 n: integer
 i: integer
 j: integer
 cmp: comparison function
 #+end_example
 
-❗All Elisp translations will not mutate the original input unless noted.
+*** Non-Mutating Python Sequence to Elisp List Translations
 
-| Python             | Elisp                                      | Notes                                        |
-|--------------------+--------------------------------------------+----------------------------------------------|
-| ~s = []~, ~s = list()~ | ~(setq s (list))~                            |                                              |
-| ~list(range(0, n))~  | ~(number-sequence 0, (1- n))~                |                                              |
-| ~x in s~             | ~(seq-contains-p s x #'cmp)~                 | Make sure ~cmp~ will compare the element type! |
-| ~x not in s~         | ~(not (seq-contains-p s x #'cmp))~           | Make sure ~cmp~ will compare the element type! |
-| ~s + t~              | ~(seq-concatenate 'list s t)~                |                                              |
-| ~s * n~ or ~n * s~     | ~(seq-map (lambda (a) (* n a)) s)~           |                                              |
-| ~s[i]~               | ~(seq-elt s i)~                              |                                              |
-| ~s[i:j]~             | ~(seq-subseq s i j)~                         |                                              |
-| ~s[i:j:k]~           |                                            |                                              |
-| ~len(s)~             | ~(seq-length s)~                             |                                              |
-| ~min(s)~             | ~(seq-min s)~                                | Elements of ~s~ must be orderable.             |
-| ~max(s)~             | ~(seq-max s)~                                | Elements of ~s~ must be orderable.             |
-| ~s.index(x)~         | ~(seq-position s x)~                         |                                              |
-| ~s.count(x)~         | ~(seq-count (lambda (a) (= x a)) s)~         |                                              |
-| ~s[0]~               | ~(seq-first s)~                              |                                              |
-| ~s[-n]~              | ~(seq-first (seq-subseq s -n))~              |                                              |
-| ~if not s:~          | ~(seq-empty-p s)~                            |                                              |
-|--------------------+--------------------------------------------+----------------------------------------------|
-| ~s[i] = x~           |                                            |                                              |
-| ~s[i:j] = t~         |                                            |                                              |
-| ~del s[i:j]~         |                                            |                                              |
-| ~del s[i]~           | ~(seq-remove-at-position s i)~               |                                              |
-| ~s[i:j:k] = t~       |                                            |                                              |
-| ~del s[i:j:k]~       |                                            |                                              |
-| ~s.append(x)~        |                                            |                                              |
-| ~s.clear()~          | ~(setq s (list))~                            |                                              |
-| ~s.copy()~           | ~(seq-copy s)~                               |                                              |
-| ~s.extend(t)~        | ~(append s t)~                               |                                              |
-| ~s *=n~              | ~(seq-map (lambda (a) (* n a)) s)~           |                                              |
-| ~s.insert(i, x)~     |                                            |                                              |
-| ~s.pop()~            | ~(pop s)~                                    | ~s~ is mutated.                                |
-| ~s.insert(0, x)~     | ~(push s x)~                                 | ~s~ is mutated.                                |
-| ~s.remove(x)~        | ~(seq-remove (lambda (a) (= x a)) s)~        |                                              |
-| ~s.reverse()~        | ~(seq-reverse s)~, ~(reverse s)~, ~(nreverse s)~ | ~nreverse~ will destructively mutate ~s~.        |
+Elisp list specific translations. 
 
-*** Python Tuple to Elisp Vector
+| Python Sequence                     | Elisp List                                                    | Notes                                                          |
+|-------------------------------------+---------------------------------------------------------------+----------------------------------------------------------------|
+| ~s = []~, ~s = list()~, ~s = (n1, n2, …)~ | ~(setq s ())~, ~(setq s nil)~                                     | ~nil~ has [[https://www.gnu.org/software/emacs/manual/html_node/eintr/nil-explained.html#:~:text=In%20Emacs%20Lisp%2C%20the%20symbol,%2C%20()%20%2C%20or%20as%20nil%20.][extra meaning]] in Elisp as it represents an empty list. |
+| ~list(range(0, n))~                   | ~(number-sequence 0 (1- n))~                                    |                                                                |
+| ~s * n~ or ~n * s~                      | ~(cl-loop repeat n append s)~, ~(apply #'append (make-list n s))~ | ~cl-loop~ needs ~(require 'cl-lib)~.                               |
+| ~x in s~                              | ~(member x s)~                                                  | ~member~ can be used if ~cmp~ is ~equal~.                            |
+| ~x not in s~                          | ~(not (member x s))~                                            | ~member~ can be used if ~cmp~ is ~equal~.                            |
+| ~s[0]~                                | ~(car s)~                                                       |                                                                |
+| ~s[-n]~                               | ~(car (last s))~                                                |                                                                |
 
-The closest Elisp analog to a Python *tuple* is a *vector*. They both model immutable sequences. 
+*** Non-Mutating Python Sequence to Elisp Vector Translations
 
-#+begin_example
-s: tuple/vector
-x: any
-t: tuple/vector
-n: integer
-i: integer
-j: integer
-cmp: comparison function
-#+end_example
+Elisp vector specific translations.
 
+| Python Sequence | Elisp Vector      | Notes |
+|-----------------+-------------------+-------|
+| ~s = []~          | ~(setq s (vector))~ |       |
+| ~s + t~           | ~(vconcat s t)~     |       |
+| ~s[i]~            | ~(aref s i)~        |       |
 
-| Python                             | Elisp                                               | Notes                                        |
-|------------------------------------+-----------------------------------------------------+----------------------------------------------|
-| ~s = (1, 2, 3)~, ~s = tuple(range(3))~ | ~(setq s (vector 1 2 3))~, ~(setq s [1 2 3])~           |                                              |
-| ~x in s~                             | ~(seq-contains-p s x #'cmp)~                            | Make sure ~cmp~ will compare the element type! |
-| ~x not in s~                         | ~(not (seq-contains-p s x #'cmp))~                      | Make sure ~cmp~ will compare the element type! |
-| ~s + t~                              | ~(seq-concatenate 'vector s t)~                       |                                              |
-| ~s * n~ or ~n * s~                     | ~(seq-into (seq-map (lambda (a) (* n a)) s) 'vector)~ |                                              |
-| ~s[i]~                               | ~(seq-elt s i)~                                       |                                              |
-| ~s[i:j]~                             | ~(seq-subseq s i j)~                                  |                                              |
-| ~s[i:j:k]~                           |                                                     |                                              |
-| ~len(s)~                             | ~(seq-length s)~                                      |                                              |
-| ~min(s)~                             | ~(seq-min s)~                                         | Elements of ~s~ can be ordered.                |
-| ~max(s)~                             | ~(seq-max s)~                                         | Elements of ~s~ can be ordered.                |
-| ~s.index(x)~                         | ~(seq-position s x)~                                  |                                              |
-| ~s.count(x)~                         | ~(seq-count (lambda (a) (= x a)) s)~                  |                                              |
-| ~s[0]~                               | ~(seq-first s)~                                       |                                              |
-| ~s[-n]~                              | ~(seq-first (seq-subseq s -n))~                       |                                              |
-| ~if not s:~                          | ~(seq-empty-p s)~                                     |                                              |
+*** Non-Mutating Python Sequence to Elisp Sequence Translations
+
+These translations work on either Elisp list or vector types.
+
+| Python Sequence         | Elisp Sequence (List or Vector)      | Notes                                        |
+|-------------------------+--------------------------------------+----------------------------------------------|
+| ~x in s~                  | ~(seq-contains-p s x #'cmp)~           | Make sure ~cmp~ will compare the element type! |
+| ~x not in s~              | ~(not (seq-contains-p s x #'cmp))~     | Make sure ~cmp~ will compare the element type! |
+| ~s + t~                   | ~(seq-concatenate 'list s t)~          |                                              |
+| ~map(lambda a: a * n, s)~ | ~(seq-map (lambda (a) (* n a)) s)~     |                                              |
+| ~s[i]~                    | ~(seq-elt s i)~                        |                                              |
+| ~s[i:j]~                  | ~(seq-subseq s i j)~                   |                                              |
+| ~s[i:]~                   | ~(seq-subseq s i)~                     |                                              |
+| ~s[i:j:k]~                |                                      |                                              |
+| ~len(s)~                  | ~(seq-length s)~, ~(length s)~           |                                              |
+| ~min(s)~                  | ~(seq-min s)~                          | Elements of ~s~ must be orderable.             |
+| ~max(s)~                  | ~(seq-max s)~                          | Elements of ~s~ must be orderable.             |
+| ~s.index(x)~              | ~(seq-position s x)~                   |                                              |
+| ~s.count(x)~              | ~(seq-count (lambda (a) (cmp x a)) s)~ |                                              |
+| ~s[0]~                    | ~(seq-first s)~                        |                                              |
+| ~s[-n]~                   | ~(seq-first (seq-subseq s -n))~        |                                              |
+| ~if not s:~               | ~(seq-empty-p s)~                      |                                              |
+
+*** Mutating Python Sequence to Elisp List Translations
+
+Elisp analogs to the Python *list* methods to handle insertion, appending, and updating are left to the developer to implement. Arguably, the omission of these functions is reluctance on the part of Emacs Core to make the trade-off design decisions required to implement them.
+
+The following Elisp translations will mutate the original input ~s~.
+
+| Python Sequence | Elisp List                                                     | Notes                                      |
+|-----------------+----------------------------------------------------------------+--------------------------------------------|
+| ~s.append(x)~     | ~(setq s (nreverse (cons x (reverse s))))~                       | This implementation is slow if ~s~ is large. |
+| ~s.clear()~       | ~(setq s ())~, ~(setq s nil)~                                      |                                            |
+| ~s.extend(t)~     | ~(setq s (append s t))~                                          |                                            |
+| ~s *=n~           | ~(setq s (cl-loop repeat n append s))~                           | ~cl-loop~ needs ~(require 'cl-lib)~.           |
+| ~s.push(x)~       | ~(push x s)~                                                     |                                            |
+| ~s.pop()~         | ~(pop s)~                                                        |                                            |
+| ~s.insert(0, x)~  | ~(push s x)~                                                     |                                            |
+| ~s.insert(i, x)~  | ~(setq s (append (seq-subseq s 0 i) (cons x (seq-subseq s i))))~ |                                            |
+
+*** Mutating Python Sequence to Elisp Vector Translations
+
+| Python Sequence | Elisp Vector      | Notes |
+|-----------------+-------------------+-------|
+| ~s[i] = x~        | ~(aset s i x)~      |       |
+| ~s.clear()~       | ~(setq s (vector))~ |       |
+| ~s.remove(x)~     | ~(remove x s)~     |       |
+
+*** Mutating Python Sequence to Elisp Sequence Translations
+These translations work on either Elisp list or vector types.
+
+| Python Sequence | Elisp Sequence (List or Vector)                                        | Notes                                                                                                                                                                           |
+|-----------------+------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ~s[i] = x~        | ~(setf (seq-elt s i) x)~                                                 |                                                                                                                                                                                 |
+| ~s[i:j] = t~      |                                                                        |                                                                                                                                                                                 |
+| ~del s[i:j]~      | ~(setq s (append (seq-subseq s 0 i) (seq-subseq s j)))~                  |                                                                                                                                                                                 |
+| ~del s[i]~        | (setq s (seq-remove-at-position s i))                                  |                                                                                                                                                                                 |
+| ~s[i:j:k] = t~    |                                                                        |                                                                                                                                                                                 |
+| ~del s[i:j:k]~    |                                                                        |                                                                                                                                                                                 |
+| ~s.copy()~        | ~(seq-copy s)~                                                           |                                                                                                                                                                                 |
+| ~s.extend(t)~     | ~(setq s (append s t))~                                                  |                                                                                                                                                                                 |
+| ~s *=n~           | ~(setq s (cl-loop for _ from 1 to n nconc (seq-copy s)))~                |                                                                                                                                                                                 |
+| ~s.remove(x)~     | ~(setq s (seq-remove (lambda (a) (cmp x a)) s))~,  ~(setq s (remove x s))~ | Note Elisp translation presumes only one instance of ~x~ is in ~s~, as ~seq-remove~ will remove all instances of ~x~ whereas in Python ~s.remove(x)~ will only remove the first instance. |
+| ~s.reverse()~     | ~(setq s (seq-reverse s))~, ~(setq s (reverse s))~, ~(setq s (nreverse s))~  | ~nreverse~ may destructively mutate ~s~.                                                                                                                                            |
 
 ** Map Types
 *** Python Dictionary to Elisp Hash Table
@@ -242,53 +272,53 @@ strs: list of strings
 #+end_example
 
 
-| Python                        | Elisp                              | Notes                         |
-|-------------------------------+------------------------------------+-------------------------------|
-| ~""~                            | ~(make-string 0 ? )~                 |                               |
-| ~a + b + c~                     | ~(concat a b c)~                     |                               |
-| ~s.strip()~                     | ~(string-clean-whitespace s)~        |                               |
-| ~s.capitalize()~                | ~(capitalize s)~                     |                               |
-| ~s.casefold()~                  |                                    |                               |
-| ~s.center(width)~               |                                    |                               |
-| ~s.count(sub)~                  |                                    |                               |
-| ~s.encode(encoding)~            |                                    |                               |
-| ~s.endswith(suffix)~            | ~(string-suffix-p suffix s)~         |                               |
-| ~s.expandtabs(tabsize)~         |                                    |                               |
-| ~s.find(sub)~                   | ~(string-search sub s)~              |                               |
-| ~s.format(*args, **kwargs)~     | ~(format fmt args…)~                 |                               |
-| ~s.index(sub)~                  | ~(string-search sub s)~              |                               |
-| ~s.isalnum()~                   | ~(string-match "^[​[:alnum:]]*$" s)~ |                               |
-| ~s.isalpha()~                   | ~(string-match "^[​[:alpha:]]*$" s)~ |                               |
-| ~s.isascii()~                   | ~(string-match "^[​[:ascii:]]*$" s)~ |                               |
-| ~s.isdecimal()~                 |                                    |                               |
-| ~s.isdigit()~                   | ~(string-match "^[​[:digit:]]*$" s)~ |                               |
-| ~s.islower()~                   | ~(string-match "^[​[:lower:]]*$" s)~ | ~case-fold-search~ must be nil. |
-| ~s.isnumeric()~                 |                                    |                               |
-| ~s.isprintable()~               | ~(string-match "^[​[:print:]]*$" s)~ |                               |
-| ~s.isspace()~                   | ~(string-match "^[​[:space:]]*$" s)~ |                               |
-| ~s.istitle()~                   |                                    |                               |
-| ~s.isupper()~                   | ~(string-match "^[​[:upper:]]*$" s)~ | ~case-fold-search~ must be nil. |
-| ~sep.join(strs)~                | ~(string-join strs sep)~             |                               |
-| ~s.ljust(width)~                |                                    |                               |
-| ~s.lower()~                     | ~(downcase s)~                       |                               |
-| ~s.lstrip()~                    | ~(string-trim-left s)~               |                               |
-| ~s.removeprefix(prefix)~        | ~(string-remove-prefix prefix s)~    |                               |
-| ~s.removesuffix(suffix)~        | ~(string-remove-suffix suffix s)~    |                               |
-| ~s.replace(old, new, count=-1)~ | ~(string-replace old new s)~         |                               |
-| ~s.rfind(sub)~                  |                                    |                               |
-| ~s.rindex(sub)~                 |                                    |                               |
-| ~s.rjust(width)~                |                                    |                               |
-| ~s.rsplit(sep)~                 |                                    |                               |
-| ~s.rstrip()~                    | ~(string-trim-right s)~              |                               |
-| ~s.split(sep)~                  | ~(split-string s sep)~               |                               |
-| ~s.splitlines()~                | ~(string-lines s)~                   |                               |
-| ~s.startswith(prefix)~          | ~(string-prefix-p prefix s)~         |                               |
-| ~s.strip()~                     | ~(string-trim s)~                    |                               |
-| ~s.swapcase()~                  |                                    |                               |
-| ~s.title()~                     | ~(upcase-initials s)~                |                               |
-| ~s.upper()~                     | ~(upcase s)~                         |                               |
-| ~s.zfill(width)~                |                                    |                               |
-
+| Python                        | Elisp                                 | Notes                         |
+|-------------------------------+---------------------------------------+-------------------------------|
+| ~""~                            | ~(make-string 0 ? )~, ~""~                |                               |
+| ~a + b + c~                     | ~(concat a b c)~                        |                               |
+| ~s.strip()~                     | ~(string-clean-whitespace s)~           |                               |
+| ~s.capitalize()~                | ~(capitalize s)~                        |                               |
+| ~s.casefold()~                  |                                       |                               |
+| ~s.center(width)~               |                                       |                               |
+| ~s.count(sub)~                  |                                       |                               |
+| ~s.encode(encoding)~            |                                       |                               |
+| ~s.endswith(suffix)~            | ~(string-suffix-p suffix s)~            |                               |
+| ~s.expandtabs(tabsize)~         |                                       |                               |
+| ~s.find(sub)~                   | ~(string-search sub s)~                 |                               |
+| ~s.format(*args, **kwargs)~     | ~(format fmt args…)~                    |                               |
+| ~s.index(sub)~                  | ~(string-search sub s)~                 |                               |
+| ~s.isalnum()~                   | ~(string-match "^[​[:alnum:]]*$" s)~    |                               |
+| ~s.isalpha()~                   | ~(string-match "^[​[:alpha:]]*$" s)~    |                               |
+| ~s.isascii()~                   | ~(string-match "^[​[:ascii:]]*$" s)~    |                               |
+| ~s.isdecimal()~                 |                                       |                               |
+| ~s.isdigit()~                   | ~(string-match "^[​[:digit:]]*$" s)~    |                               |
+| ~s.islower()~                   | ~(string-match "^[​[:lower:]]*$" s)~    | ~case-fold-search~ must be nil. |
+| ~s.isnumeric()~                 |                                       |                               |
+| ~s.isprintable()~               | ~(string-match "^[​[:print:]]*$" s)~    |                               |
+| ~s.isspace()~                   | ~(string-match "^[​[:space:]]*$" s)~    |                               |
+| ~s.istitle()~                   |                                       |                               |
+| ~s.isupper()~                   | ~(string-match "^[​[:upper:]]*$" s)~    | ~case-fold-search~ must be nil. |
+| ~sep.join(strs)~                | ~(string-join strs sep)~                |                               |
+| ~s.ljust(width)~                |                                       |                               |
+| ~s.lower()~                     | ~(downcase s)~                          |                               |
+| ~s.lstrip()~                    | ~(string-trim-left s)~                  |                               |
+| ~s.removeprefix(prefix)~        | ~(string-remove-prefix prefix s)~       |                               |
+| ~s.removesuffix(suffix)~        | ~(string-remove-suffix suffix s)~       |                               |
+| ~s.replace(old, new, count=-1)~ | ~(string-replace old new s)~            |                               |
+| ~s.rfind(sub)~                  |                                       |                               |
+| ~s.rindex(sub)~                 |                                       |                               |
+| ~s.rjust(width)~                |                                       |                               |
+| ~s.rsplit(sep)~                 |                                       |                               |
+| ~s.rstrip()~                    | ~(string-trim-right s)~                 |                               |
+| ~s.split(sep)~                  | ~(split-string s sep)~                  |                               |
+| ~s.splitlines()~                | ~(string-lines s)~                      |                               |
+| ~s.startswith(prefix)~          | ~(string-prefix-p prefix s)~            |                               |
+| ~s.strip()~                     | ~(string-trim s)~                       |                               |
+| ~s.swapcase()~                  |                                       |                               |
+| ~s.title()~                     | ~(upcase-initials s)~                   |                               |
+| ~s.upper()~                     | ~(upcase s)~                            |                               |
+| ~s.zfill(width)~                |                                       |                               |
+| ~s1 == s2~                      | ~(string-equal s1 s2)~, ~(string= s1 s2)~ |                               |
 
 * File I/O
 
