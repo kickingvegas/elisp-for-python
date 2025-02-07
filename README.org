@@ -4,7 +4,7 @@ This document is for readers who are familiar with the Python programming langua
 
 ❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged.
 
-Version: 0.2.0
+Version: 0.2.1
 
 * Table of Contents                                                   :TOC_3:
 - [[#elisp-cheatsheet-for-python-programmers][Elisp Cheatsheet for Python Programmers]]
@@ -83,8 +83,7 @@ Elisp list specific translations.
 | ~x not in s~                          | ~(not (member x s))~                                            | ~member~ can be used if ~cmp~ is ~equal~.                            |
 | ~s + t~                               | ~(seq-concatenate 'list s t)~, ~(append s t)~                     |                                                                |
 | ~s[0]~                                | ~(car s)~                                                       |                                                                |
-| ~s[-n]~                               | ~(car (last s))~                                                |                                                                |
-
+| ~s[-1]~                               | ~(car (last s))~                                                |                                                                |
 
 *** Non-Mutating Python Sequence to Elisp Vector Translations
 
