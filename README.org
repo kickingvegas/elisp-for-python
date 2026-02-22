@@ -89,11 +89,11 @@ Elisp list specific translations.
 
 Elisp vector specific translations.
 
-| Python Sequence | Elisp Vector                               | Notes |
-|-----------------+--------------------------------------------+-------|
-| ~s = []~          | ~(setq s (vector))~                          |       |
+| Python Sequence | Elisp Vector                                 | Notes |
+|-----------------+----------------------------------------------+-------|
+| ~s = []~          | ~(setq s (vector))~                            |       |
 | ~s + t~           | ~(seq-concatenate 'vector s t)~, ~(vconcat s t)~ |       |
-| ~s[i]~            | ~(aref s i)~                                 |       |
+| ~s[i]~            | ~(aref s i)~                                   |       |
 
 *** Non-Mutating Python Sequence to Elisp Sequence Translations
 
