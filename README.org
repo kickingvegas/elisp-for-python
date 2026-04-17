@@ -4,7 +4,7 @@ This document is for readers who are familiar with the Python programming langua
 
 ❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged.
 
-Version: 0.3.1
+Version: 0.3.2-rc.1
 
 * Table of Contents                                                   :TOC_3:
 - [[#elisp-cheatsheet-for-python-programmers][Elisp Cheatsheet for Python Programmers]]
