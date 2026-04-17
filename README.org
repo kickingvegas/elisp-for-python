@@ -4,7 +4,7 @@ This document is for readers who are familiar with the Python programming langua
 
 ❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged.
 
-Version: 0.2.1
+Version: 0.3.0
 
 * Table of Contents                                                   :TOC_3:
 - [[#elisp-cheatsheet-for-python-programmers][Elisp Cheatsheet for Python Programmers]]
@@ -19,16 +19,18 @@ Version: 0.2.1
     - [[#mutating-python-sequence-to-elisp-vector-translations][Mutating Python Sequence to Elisp Vector Translations]]
     - [[#mutating-python-sequence-to-elisp-sequence-translations][Mutating Python Sequence to Elisp Sequence Translations]]
   - [[#map-types][Map Types]]
-    - [[#python-dictionary-to-elisp-hash-table][Python Dictionary to Elisp Hash Table]]
     - [[#python-dictionary-to-elisp-association-list-alist][Python Dictionary to Elisp Association List (alist)]]
     - [[#python-dictionary-to-elisp-property-list-plist][Python Dictionary to Elisp Property List (plist)]]
-    - [[#looping][Looping]]
+    - [[#python-dictionary-to-elisp-hash-table][Python Dictionary to Elisp Hash Table]]
+  - [[#iteration][Iteration]]
+    - [[#sequence][Sequence]]
+    - [[#map][Map]]
   - [[#python-string-to-elisp-string][Python String to Elisp String]]
 - [[#file-io][File I/O]]
 - [[#license][License]]
 
 * Guiding Principles
-- This document uses Python 3.12 and Emacs Lisp 29.1+ APIs from built-in packages.
+- This document uses Python 3.13 and Emacs Lisp 30.2+ APIs from built-in packages.
 - Python code translated to Elisp emphasizes using generic (aka [[https://en.wikipedia.org/wiki/Polymorphism_(computer_science)#:~:text=A%20function%20that%20can%20evaluate,which%20such%20specializations%20are%20made.][polymorphic]]) functions.
   - This lowers the cognitive load of working with different Elisp sequence types (*list*, *vector*) and map types (*hash-table*, *alist*).
   - The Emacs packages ~seq.el~ and  ~map.el~ do the heavy lifting here for sequence and map types respectively.
@@ -89,11 +91,11 @@ Elisp list specific translations.
 
 Elisp vector specific translations.
 
-| Python Sequence | Elisp Vector                               | Notes |
-|-----------------+--------------------------------------------+-------|
-| ~s = []~          | ~(setq s (vector))~                          |       |
+| Python Sequence | Elisp Vector                                 | Notes |
+|-----------------+----------------------------------------------+-------|
+| ~s = []~          | ~(setq s (vector))~                            |       |
 | ~s + t~           | ~(seq-concatenate 'vector s t)~, ~(vconcat s t)~ |       |
-| ~s[i]~            | ~(aref s i)~                                 |       |
+| ~s[i]~            | ~(aref s i)~                                   |       |
 
 *** Non-Mutating Python Sequence to Elisp Sequence Translations
 
@@ -160,6 +162,71 @@ These translations work on either Elisp list or vector types.
 | ~s.reverse()~     | ~(setq s (seq-reverse s))~, ~(setq s (reverse s))~, ~(setq s (nreverse s))~  | ~nreverse~ may destructively mutate ~s~.                                                                                                                                            |
 
 ** Map Types
+
+Emacs Lisp provides several implementations of a map type:
+
+- Association list (alist)
+- Property list (plist)
+- Hash Table (hash-table)
+
+Association and property lists are lightweight map types in that they use list structure to emulate a map type. *An alist or plist should not be considered isomorphic to a Python dictionary as they can have degenerate keys*. This contrasts sharply with a Python dictionary, where keys are always unique.
+
+*** Python Dictionary to Elisp Association List (alist)
+
+An association list (alist) is a list with structure ~((key1 . value1) (key2 . value2) …)~.
+
+Conventional Elisp wisdom arguing for *alist* usage over a hash-table boils down to convenient serialization and the notion that in practice, *alist* sizes are small enough to not merit the overhead of using hash-tables (described below).
+
+
+#+begin_example
+d: dictionary/alist
+k: key
+v: value
+#+end_example
+
+
+| Python                 | Elisp                        | Notes                                                       |
+|------------------------+------------------------------+-------------------------------------------------------------|
+| ~d = dict()~, ~d = {}~     | ~(setq d (list))~              |                                                             |
+| ~list(d)~                | ~(map-keys d)~                 |                                                             |
+| ~len(d)~                 | ~(map-length d)~               |                                                             |
+| ~d[k]~                   | ~(map-elt d k)~                |                                                             |
+| ~d[k] = v~, ~k ∉ d.keys()~ | ~(setq d (map-insert d k v))~  | ~k~ is not in ~d~. ~map-insert~ will not check uniqueness.        |
+| ~d[k] = v~, ~k ∈ d.keys()~ | ~(map-put! d k v)~             | ~k~ is in ~d~. Note that ~map-put!~ will mutate ~d~.                |
+| ~del d[k]~               | ~(setq d (map-delete d k))~    | Type-specific behavior is dependent on key type. 😞         |
+| ~k in d~                 | ~(map-contains-key d k)~       |                                                             |
+| ~k not in d~             | ~(not (map-contains-key d k))~ |                                                             |
+| ~iter(d)~                |                              |                                                             |
+| ~d.clear()~              | ~(setq d (list))~              |                                                             |
+| ~d.copy()~               | ~(map-copy d)~                 |                                                             |
+| ~d.get(k)~               | ~(map-elt d k)~                |                                                             |
+| ~d.items()~              | ~(map-pairs d)~                |                                                             |
+| ~d.keys()~               | ~(map-keys d)~                 |                                                             |
+| ~d.pop(k)~               |                              |                                                             |
+| ~d.popitem()~            |                              |                                                             |
+| ~reversed(d)~            |                              |                                                             |
+| ~d.values()~             | ~(map-values d)~               |                                                             |
+
+
+*** Python Dictionary to Elisp Property List (plist)
+
+A property list (*plist*) is a list with structure ~(key1 value1 key2 value2 …)~. Most all the ~map-~ commands used to operate on an *alist* also apply to a *plist* with the exception of initialization. Whereas an *alist* can be initialized to be empty (~nil~), a *plist* must be initialized with a key, value pair.
+
+A common convention is to name plist keys with a ‘:’ prefix character (e.g. ~:name~). Note the key type is an Elisp symbol, /not/ a string.
+
+#+begin_example
+d: dictionary/plist
+k: key
+v: value
+#+end_example
+
+| Python                          | Elisp              |
+|---------------------------------+--------------------|
+| ~d = dict([(k, v)])~, ~d = {k : v}~ | ~(setq d '(k v))~    |
+| ~d[k]~                            | ~(plist-get d k)~    |
+| ~d[k] = v~                        | ~(plist-put d k v)~  |
+| ~k in d~                          | ~(plist-member d k)~ |
+
 *** Python Dictionary to Elisp Hash Table
 
 The Elisp ~hash-table~ is the most straightforward analog to a Python dictionary. That said, there are gotchas, particularly around ~hash-table~ creation. If the keys are of type *string*, then the key comparison should be set to the function ~equal~ via the ~:test~ slot. If ~:test~ is omitted the default function ~eql~ is used which compares numbers.
@@ -193,69 +260,92 @@ cmp: comparison function
 | ~d.values()~         | ~(map-values d)~                         |                                          |
 |                    | ~(map-insert d k v)~                     | Like ~map-put!~ but does not mutate ~d~.     |
 
-*** Python Dictionary to Elisp Association List (alist)
+** Iteration
 
-An *alist* is a convention to construct a basic list such that key-value semantics can be applied to it. An *alist* is allowed to possess degenerate keys (that is, keys are not necessarily unique!). This is because in truth, an *alist* is still a list with no actual enforcement of how (key, value) pairs are stored in it. IMHO Elisp *alists* are an abomination, albeit a pragmatic one. Conventional Elisp wisdom arguing for *alist* usage boils down to convenient serialization and the notion that in practice, *alist* sizes are small enough to not merit the overhead of using hash-tables.
+Elisp provides many different functions to iterate through a sequence or map. The following sections show some common Python iteration examples with their Elisp equivalents.
 
-Regardless, my guidance is to exercise caution when translating Python dictionary code to an Elisp *alist*.
+*** Sequence
 
-#+begin_example
-d: dictionary/alist
-k: key
-v: value
-#+end_example
-
-
-| Python             | Elisp                        | Notes                                                                 |
-|--------------------+------------------------------+-----------------------------------------------------------------------|
-| ~d = dict()~, ~d = {}~ | ~(setq d (list))~              |                                                                       |
-| ~list(d)~            | ~(map-keys d)~                 |                                                                       |
-| ~len(d)~             | ~(map-length d)~               |                                                                       |
-| ~d[k]~               | ~(map-elt d k)~                | Type-specific behavior requires specifying test function ~t~.           |
-| ~d[k] = v~           | ~(map-put! d k v)~             | This only works if ~d~ is not nil. To initialize use ~(push '(k . v) d)~. |
-| ~del d[k]~           | ~(setq d (map-delete d k))~    | Type-specific behavior is dependent on key type. 😞                  |
-| ~k in d~             | ~(map-contains-key d k)~       |                                                                       |
-| ~k not in d~         | ~(not (map-contains-key d k))~ |                                                                       |
-| ~iter(d)~            |                              |                                                                       |
-| ~d.clear()~          | ~(setq d (list))~              |                                                                       |
-| ~d.copy()~           | ~(map-copy d)~                 |                                                                       |
-| ~d.get(k)~           | ~(map-elt d k)~                |                                                                       |
-| ~d.items()~          | ~(map-pairs d)~                |                                                                       |
-| ~d.keys()~           | ~(map-keys d)~                 |                                                                       |
-| ~d.pop(k)~           |                              |                                                                       |
-| ~d.popitem()~        |                              |                                                                       |
-| ~reversed(d)~        |                              |                                                                       |
-| ~d.values()~         | ~(map-values d)~               |                                                                       |
-|                    | ~(map-insert d k v)~           | Like ~map-put!~ but does not mutate ~d~. Also does not check uniqueness.  |
-
-*** Python Dictionary to Elisp Property List (plist)
-
-TBD
-
-*** Looping
-
-Two functions which can iterate through a map are ~map-do~ and ~map-apply~. Shown below are the Python translated equivalents.
-
-#+begin_src elisp :lexical no
-  (map-do f d) ; return nil
-#+end_src
+Basic Python ~for~ loop running the function ~f(i)~ for every element in ~range(n)~. No results are returned.
 
 #+begin_src python
-  def map_do(d):
-      for k,v in d.items():
-          f(k, v)
+  for i in range(n):
+      f(i)
 #+end_src
+
+Elisp equivalent using ~mapc~ which does not accumulate results.
 
 #+begin_src elisp :lexical no
-  (map-apply f d) ; return results of f applied to each element of d as a list
+  (mapc #'f (number-sequence 0 (1- n))) ; f is a function with a single argument
 #+end_src
 
+Python [[https://docs.python.org/3/library/functions.html#map][map]] function on an iterable.
+
 #+begin_src python
-  def map_apply(d):
-      results = []
-      for k,v in d.items():
-          results.append(f(k, v))
-      return results
+  map(f range(n)) # f is a function with a single argument
+#+end_src
+
+Elisp equivalent using ~mapcar~.
+
+#+begin_src elisp :lexical no
+  (mapcar #'f (number-sequence 0 (1- n)))
+#+end_src
+
+Python ~filter~ example of odd numbers only from 0 to 9 inclusive.
+
+#+begin_src python :results output
+  filter(lambda x: x % 2, range(10))
+#+end_src
+
+Elisp ~seq-filter~ equivalent. Note that in Elisp, a ~0~ value does not coerce to a /false/ value when compared like in Python. 
+
+#+begin_src elisp :lexical no
+  (seq-filter (lambda (x) (if (eq 0 (mod x 2)) nil t)) (number-sequence 0 9))
+#+end_src
+
+
+Python ~reduce~ example.
+
+#+begin_src python :results output
+  from functools import reduce
+  reduce(lambda x,y: x+y, range(10))
+#+end_src
+
+Elisp ~seq-reduce~ equivalent.
+
+#+begin_src elisp :lexical no
+  (seq-reduce (lambda (x y) (+ x y)) (number-sequence 0 9) 0)
+#+end_src
+
+
+
+*** Map
+
+Python iteration through dictionary ~d~ using ~for~ loop.
+
+#+begin_src python
+  for k,v in d.items():
+      f(k,v)
+#+end_src
+
+Elisp equivalent using ~map-do~. No results are accumulated.
+
+#+begin_src elisp :lexical no
+  (map-do #'f d)
+#+end_src
+
+Python dictionary iteration example, saving results in a list.
+
+#+begin_src python
+  results = []
+  for k,v in d.items():
+      results.append(f(k, v))
+#+end_src
+
+Elisp equivalent, where the returned result is a list of each result of ~f~ applied to a key, value pair of ~d~.
+
+#+begin_src elisp :lexical no
+  (map-apply #'f d)
 #+end_src
 
 
