@@ -47,10 +47,10 @@ That said, here is some general guidance. Use the comparison function:
 - ~eql~ to compare numbers but also take into account /type/. For example comparing an integer to its numerically equivalent float will return ~nil~.
 - ~equal~ to compare if the objects have equal components. 
 
-| Python | Elisp | Notes |
-|--------+-------+-------|
-| ~is~     | ~eq~    |       |
-| ~==~     | ~equal~ |       |
+| Python | Elisp | Notes                                  |
+|--------+-------+----------------------------------------|
+| ~is~     | ~eq~    |                                        |
+| ~==~     | ~equal~ | Use Elisp ~equal~ for string comparison. |
 
 Depending on the type of object to compare, you may have to resort to writing a custom comparison function.
 
@@ -116,6 +116,7 @@ These translations work on either Elisp list or vector types.
 | ~s.index(x)~              | ~(seq-position s x)~                   |                                              |
 | ~s.count(x)~              | ~(seq-count (lambda (a) (cmp x a)) s)~ |                                              |
 | ~s[0]~                    | ~(seq-first s)~                        |                                              |
+| ~s[-1]~                   | ~(car (last s))~                       |                                              |
 | ~s[-n]~                   | ~(seq-first (seq-subseq s -n))~        |                                              |
 | ~if not s:~               | ~(seq-empty-p s)~                      |                                              |
 
@@ -185,27 +186,27 @@ v: value
 #+end_example
 
 
-| Python                 | Elisp                        | Notes                                                       |
-|------------------------+------------------------------+-------------------------------------------------------------|
-| ~d = dict()~, ~d = {}~     | ~(setq d (list))~              |                                                             |
-| ~list(d)~                | ~(map-keys d)~                 |                                                             |
-| ~len(d)~                 | ~(map-length d)~               |                                                             |
-| ~d[k]~                   | ~(map-elt d k)~                |                                                             |
-| ~d[k] = v~, ~k ∉ d.keys()~ | ~(setq d (map-insert d k v))~  | ~k~ is not in ~d~. ~map-insert~ will not check uniqueness.        |
-| ~d[k] = v~, ~k ∈ d.keys()~ | ~(map-put! d k v)~             | ~k~ is in ~d~. Note that ~map-put!~ will mutate ~d~.                |
-| ~del d[k]~               | ~(setq d (map-delete d k))~    | Type-specific behavior is dependent on key type. 😞         |
-| ~k in d~                 | ~(map-contains-key d k)~       |                                                             |
-| ~k not in d~             | ~(not (map-contains-key d k))~ |                                                             |
-| ~iter(d)~                |                              |                                                             |
-| ~d.clear()~              | ~(setq d (list))~              |                                                             |
-| ~d.copy()~               | ~(map-copy d)~                 |                                                             |
-| ~d.get(k)~               | ~(map-elt d k)~                |                                                             |
-| ~d.items()~              | ~(map-pairs d)~                |                                                             |
-| ~d.keys()~               | ~(map-keys d)~                 |                                                             |
-| ~d.pop(k)~               |                              |                                                             |
-| ~d.popitem()~            |                              |                                                             |
-| ~reversed(d)~            |                              |                                                             |
-| ~d.values()~             | ~(map-values d)~               |                                                             |
+| Python                 | Elisp                        | Notes                                                |
+|------------------------+------------------------------+------------------------------------------------------|
+| ~d = dict()~, ~d = {}~     | ~(setq d (list))~              |                                                      |
+| ~list(d)~                | ~(map-keys d)~                 |                                                      |
+| ~len(d)~                 | ~(map-length d)~               |                                                      |
+| ~d[k]~                   | ~(map-elt d k)~                |                                                      |
+| ~d[k] = v~, ~k ∉ d.keys()~ | ~(setq d (map-insert d k v))~  | ~k~ is not in ~d~. ~map-insert~ will not check uniqueness. |
+| ~d[k] = v~, ~k ∈ d.keys()~ | ~(map-put! d k v)~             | ~k~ is in ~d~. Note that ~map-put!~ will mutate ~d~.         |
+| ~del d[k]~               | ~(setq d (map-delete d k))~    | Type-specific behavior is dependent on key type. 😞  |
+| ~k in d~                 | ~(map-contains-key d k)~       |                                                      |
+| ~k not in d~             | ~(not (map-contains-key d k))~ |                                                      |
+| ~iter(d)~                |                              |                                                      |
+| ~d.clear()~              | ~(setq d (list))~              |                                                      |
+| ~d.copy()~               | ~(map-copy d)~                 |                                                      |
+| ~d.get(k)~               | ~(map-elt d k)~                |                                                      |
+| ~d.items()~              | ~(map-pairs d)~                |                                                      |
+| ~d.keys()~               | ~(map-keys d)~                 |                                                      |
+| ~d.pop(k)~               |                              | Can be emulated using ~map-elt~ and ~map-delete~.        |
+| ~d.popitem()~            |                              |                                                      |
+| ~reversed(d)~            | ~(reverse (map-keys d))~       |                                                      |
+| ~d.values()~             | ~(map-values d)~               |                                                      |
 
 
 *** Python Dictionary to Elisp Property List (plist)
@@ -238,27 +239,27 @@ v: value
 cmp: comparison function
 #+end_example
 
-| Python             | Elisp                                  | Notes                                    |
-|--------------------+----------------------------------------+------------------------------------------|
-| ~d = dict()~, ~d = {}~ | ~(setq d (make-hash-table :test #'cmp))~ | If ~:test~ is omitted, default ~cmp~ is ~eql~. |
-| ~list(d)~            | ~(map-keys d)~                           |                                          |
-| ~len(d)~             | ~(map-length d)~                         |                                          |
-| ~d[k]~               | ~(map-elt d k)~                          |                                          |
-| ~d[k] = v~           | ~(map-put! d k v)~                       |                                          |
-| ~del d[k]~           | ~(map-delete d k)~                       |                                          |
-| ~k in d~             | ~(map-contains-key d k)~                 |                                          |
-| ~k not in d~         | ~(not (map-contains-key d k))~           |                                          |
-| ~iter(d)~            |                                        |                                          |
-| ~d.clear()~          | ~(clrhash d)~                            |                                          |
-| ~d.copy()~           | ~(map-copy d)~                           |                                          |
-| ~d.get(k)~           | ~(map-elt d k)~                          |                                          |
-| ~d.items()~          | ~(map-pairs d)~                          |                                          |
-| ~d.keys()~           | ~(map-keys d)~                           |                                          |
-| ~d.pop(k)~           |                                        |                                          |
-| ~d.popitem()~        |                                        |                                          |
-| ~reversed(d)~        |                                        |                                          |
-| ~d.values()~         | ~(map-values d)~                         |                                          |
-|                    | ~(map-insert d k v)~                     | Like ~map-put!~ but does not mutate ~d~.     |
+| Python             | Elisp                                  | Notes                                         |
+|--------------------+----------------------------------------+-----------------------------------------------|
+| ~d = dict()~, ~d = {}~ | ~(setq d (make-hash-table :test #'cmp))~ | If ~:test~ is omitted, default ~cmp~ is ~eql~.      |
+| ~list(d)~            | ~(map-keys d)~                           |                                               |
+| ~len(d)~             | ~(map-length d)~                         |                                               |
+| ~d[k]~               | ~(map-elt d k)~                          |                                               |
+| ~d[k] = v~           | ~(map-put! d k v)~                       |                                               |
+| ~del d[k]~           | ~(map-delete d k)~                       |                                               |
+| ~k in d~             | ~(map-contains-key d k)~                 |                                               |
+| ~k not in d~         | ~(not (map-contains-key d k))~           |                                               |
+| ~iter(d)~            |                                        |                                               |
+| ~d.clear()~          | ~(clrhash d)~                            |                                               |
+| ~d.copy()~           | ~(map-copy d)~                           |                                               |
+| ~d.get(k)~           | ~(map-elt d k)~                          |                                               |
+| ~d.items()~          | ~(map-pairs d)~                          |                                               |
+| ~d.keys()~           | ~(map-keys d)~                           |                                               |
+| ~d.pop(k)~           |                                        | Can be emulated using ~map-elt~ and ~map-delete~. |
+| ~d.popitem()~        |                                        |                                               |
+| ~reversed(d)~        |                                        |                                               |
+| ~d.values()~         | ~(map-values d)~                         |                                               |
+|                    | ~(map-insert d k v)~                     | Like ~map-put!~ but does not mutate ~d~.          |
 
 ** Iteration
 
