@@ -12,7 +12,7 @@ This document is for readers who are familiar with the Python programming langua
 
 ❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged.
 
-Version: 0.3.2
+Version: 0.3.2-rc.2
 
 Author: Charles Y. Choi
 
