@@ -52,6 +52,13 @@ VERSION := $(shell ./scripts/read-version.sh $(MAIN_DOC))
 BUMP_LEVEL=patch
 VERSION_BUMP := $(shell python -m semver bump $(BUMP_LEVEL) $(VERSION))
 VERSION_LAST_TAG := $(shell git tag --sort=-creatordate | head -n 1)
+EMACS_ELPA_DIR=$(HOME)/.config/emacs/elpa
+
+ifdef EMACS_APP_EXEC
+  EXEC_NAME=$(EMACS_APP_EXEC)
+else
+  EXEC_NAME=emacs
+endif
 
 .PHONY: tests					\
 regression					\
@@ -130,5 +137,28 @@ create-gh-release: VERSION_BUMP:=$(shell python -m semver nextver $(VERSION) $(B
 create-gh-release: create-release-tag
 	gh release create --draft --title v$(VERSION_BUMP) --generate-notes $(VERSION_BUMP)
 
+html:
+	mkdir $@
+
+html/main.css: main.css
+	cp -f $< $@
+
+html/index.html: html $(PACKAGE_NAME).html html/main.css
+	cp -f $(PACKAGE_NAME).html $@
+
+
+$(PACKAGE_NAME).html: $(PACKAGE_NAME).org
+	$(EXEC_NAME) -Q --batch -l efp-export.el $(PACKAGE_NAME).org	\
+-L $(EMACS_ELPA_DIR)/htmlize-current					\
+--eval "(org-html-export-to-html)"
+
+.PHONY: open-html
+open-html: html/index.html
+	open html/index.html
+
 status:
 	git status
+
+clean:
+	- rm $(PACKAGE_NAME).html
+	- rm -rf html
