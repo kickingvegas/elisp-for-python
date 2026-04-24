@@ -1,38 +1,26 @@
-* Elisp Cheatsheet for Python Programmers
+# :PROPERTIES:
+# :UNNUMBERED: t
+# :END:
+
+#+TITLE: Elisp Cheatsheet for Python Programmers
+#+AUTHOR: Charles Y. Choi
+#+EMAIL: kickingvegas@gmail.com
+#+OPTIONS: toc:t html-postamble:nil
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="main.css" />
 
 This document is for readers who are familiar with the Python programming language and wish to apply that knowledge to writing Emacs Lisp (Elisp). It is intended to be a “cheat sheet”/quick reference and should not be considered a primary source for either Python or Emacs APIs. 
 
 ❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged.
 
-Version: 0.3.1
+Version: 0.3.2-rc.1
 
-* Table of Contents                                                   :TOC_3:
-- [[#elisp-cheatsheet-for-python-programmers][Elisp Cheatsheet for Python Programmers]]
-- [[#guiding-principles][Guiding Principles]]
-- [[#collections][Collections]]
-  - [[#comparison-functions][Comparison Functions]]
-  - [[#sequence-types][Sequence Types]]
-    - [[#non-mutating-python-sequence-to-elisp-list-translations][Non-Mutating Python Sequence to Elisp List Translations]]
-    - [[#non-mutating-python-sequence-to-elisp-vector-translations][Non-Mutating Python Sequence to Elisp Vector Translations]]
-    - [[#non-mutating-python-sequence-to-elisp-sequence-translations][Non-Mutating Python Sequence to Elisp Sequence Translations]]
-    - [[#mutating-python-sequence-to-elisp-list-translations][Mutating Python Sequence to Elisp List Translations]]
-    - [[#mutating-python-sequence-to-elisp-vector-translations][Mutating Python Sequence to Elisp Vector Translations]]
-    - [[#mutating-python-sequence-to-elisp-sequence-translations][Mutating Python Sequence to Elisp Sequence Translations]]
-  - [[#map-types][Map Types]]
-    - [[#python-dictionary-to-elisp-association-list-alist][Python Dictionary to Elisp Association List (alist)]]
-    - [[#python-dictionary-to-elisp-property-list-plist][Python Dictionary to Elisp Property List (plist)]]
-    - [[#python-dictionary-to-elisp-hash-table][Python Dictionary to Elisp Hash Table]]
-  - [[#iteration][Iteration]]
-    - [[#sequence][Sequence]]
-    - [[#map][Map]]
-  - [[#python-string-to-elisp-string][Python String to Elisp String]]
-- [[#file-io][File I/O]]
-- [[#license][License]]
+Author: Charles Y. Choi
+
 
 * Guiding Principles
 - This document uses Python 3.13 and Emacs Lisp 30.2+ APIs from built-in packages.
 - Python code translated to Elisp emphasizes using generic (aka [[https://en.wikipedia.org/wiki/Polymorphism_(computer_science)#:~:text=A%20function%20that%20can%20evaluate,which%20such%20specializations%20are%20made.][polymorphic]]) functions.
-  - This lowers the cognitive load of working with different Elisp sequence types (*list*, *vector*) and map types (*hash-table*, *alist*).
+  - This lowers the cognitive load of working with different Elisp sequence types (*list*, *vector*) and map types (*hash-table*, *alist*, *plist*).
   - The Emacs packages ~seq.el~ and  ~map.el~ do the heavy lifting here for sequence and map types respectively.
 - This document aims to provide guidance for a proficient Python programmer to implement Elisp code using familiar programming abstractions without surprise.
 - Performance is at best a tertiary concern.
@@ -301,7 +289,11 @@ Python ~filter~ example of odd numbers only from 0 to 9 inclusive.
 Elisp ~seq-filter~ equivalent. Note that in Elisp, a ~0~ value does not coerce to a /false/ value when compared like in Python. 
 
 #+begin_src elisp :lexical no
-  (seq-filter (lambda (x) (if (eq 0 (mod x 2)) nil t)) (number-sequence 0 9))
+  (seq-filter (lambda (x)
+                (if (eq 0 (mod x 2))
+                    nil
+                  t))
+              (number-sequence 0 9))
 #+end_src
 
 
@@ -315,7 +307,9 @@ Python ~reduce~ example.
 Elisp ~seq-reduce~ equivalent.
 
 #+begin_src elisp :lexical no
-  (seq-reduce (lambda (x y) (+ x y)) (number-sequence 0 9) 0)
+  (seq-reduce (lambda (x y)
+                (+ x y))
+              (number-sequence 0 9) 0)
 #+end_src
 
 
@@ -350,7 +344,6 @@ Elisp equivalent, where the returned result is a list of each result of ~f~ appl
 #+end_src
 
 
-
 ** Python String to Elisp String
 
 #+begin_example
@@ -360,56 +353,76 @@ b: string
 c: string
 sep: separator string 
 strs: list of strings
+i: integer
+j: integer
 #+end_example
 
 
-| Python                        | Elisp                                 | Notes                         |
-|-------------------------------+---------------------------------------+-------------------------------|
-| ~""~                            | ~(make-string 0 ? )~, ~""~                |                               |
-| ~a + b + c~                     | ~(concat a b c)~                        |                               |
-| ~s.strip()~                     | ~(string-clean-whitespace s)~           |                               |
-| ~s.capitalize()~                | ~(capitalize s)~                        |                               |
-| ~s.casefold()~                  |                                       |                               |
-| ~s.center(width)~               |                                       |                               |
-| ~s.count(sub)~                  |                                       |                               |
-| ~s.encode(encoding)~            |                                       |                               |
-| ~s.endswith(suffix)~            | ~(string-suffix-p suffix s)~            |                               |
-| ~s.expandtabs(tabsize)~         |                                       |                               |
-| ~s.find(sub)~                   | ~(string-search sub s)~                 |                               |
-| ~s.format(*args, **kwargs)~     | ~(format fmt args…)~                    |                               |
-| ~s.index(sub)~                  | ~(string-search sub s)~                 |                               |
-| ~s.isalnum()~                   | ~(string-match "^[​[:alnum:]]*$" s)~    |                               |
-| ~s.isalpha()~                   | ~(string-match "^[​[:alpha:]]*$" s)~    |                               |
-| ~s.isascii()~                   | ~(string-match "^[​[:ascii:]]*$" s)~    |                               |
-| ~s.isdecimal()~                 |                                       |                               |
-| ~s.isdigit()~                   | ~(string-match "^[​[:digit:]]*$" s)~    |                               |
-| ~s.islower()~                   | ~(string-match "^[​[:lower:]]*$" s)~    | ~case-fold-search~ must be nil. |
-| ~s.isnumeric()~                 |                                       |                               |
-| ~s.isprintable()~               | ~(string-match "^[​[:print:]]*$" s)~    |                               |
-| ~s.isspace()~                   | ~(string-match "^[​[:space:]]*$" s)~    |                               |
-| ~s.istitle()~                   |                                       |                               |
-| ~s.isupper()~                   | ~(string-match "^[​[:upper:]]*$" s)~    | ~case-fold-search~ must be nil. |
-| ~sep.join(strs)~                | ~(string-join strs sep)~                |                               |
-| ~s.ljust(width)~                |                                       |                               |
-| ~s.lower()~                     | ~(downcase s)~                          |                               |
-| ~s.lstrip()~                    | ~(string-trim-left s)~                  |                               |
-| ~s.removeprefix(prefix)~        | ~(string-remove-prefix prefix s)~       |                               |
-| ~s.removesuffix(suffix)~        | ~(string-remove-suffix suffix s)~       |                               |
-| ~s.replace(old, new, count=-1)~ | ~(string-replace old new s)~            |                               |
-| ~s.rfind(sub)~                  |                                       |                               |
-| ~s.rindex(sub)~                 |                                       |                               |
-| ~s.rjust(width)~                |                                       |                               |
-| ~s.rsplit(sep)~                 |                                       |                               |
-| ~s.rstrip()~                    | ~(string-trim-right s)~                 |                               |
-| ~s.split(sep)~                  | ~(split-string s sep)~                  |                               |
-| ~s.splitlines()~                | ~(string-lines s)~                      |                               |
-| ~s.startswith(prefix)~          | ~(string-prefix-p prefix s)~            |                               |
-| ~s.strip()~                     | ~(string-trim s)~                       |                               |
-| ~s.swapcase()~                  |                                       |                               |
-| ~s.title()~                     | ~(upcase-initials s)~                   |                               |
-| ~s.upper()~                     | ~(upcase s)~                            |                               |
-| ~s.zfill(width)~                |                                       |                               |
-| ~s1 == s2~                      | ~(string-equal s1 s2)~, ~(string= s1 s2)~ |                               |
+| Python                          | Elisp                                     | Notes                           |
+|---------------------------------+-------------------------------------------+---------------------------------|
+| ~""~                            | ~(make-string 0 ? )~, ~""~                |                                 |
+| ~s[i:]~                         | ~(substring s i)~                         |                                 |
+| ~s[i:j]~                        | ~(substring s i j)~                       |                                 |
+| ~s[:j]~                         | ~(substring s nil j)~                     |                                 |
+| ~a + b + c~                     | ~(concat a b c)~                          |                                 |
+| ~s.strip()~                     | ~(string-clean-whitespace s)~             |                                 |
+| ~s.capitalize()~                | ~(capitalize s)~                          |                                 |
+| ~s.casefold()~                  |                                           |                                 |
+| ~s.center(width)~               |                                           |                                 |
+| ~s.count(sub)~                  |                                           |                                 |
+| ~s.encode(encoding)~            |                                           |                                 |
+| ~s.endswith(suffix)~            | ~(string-suffix-p suffix s)~              |                                 |
+| ~s.expandtabs(tabsize)~         |                                           |                                 |
+| ~s.find(sub)~                   | ~(string-search sub s)~                   |                                 |
+| ~s.format(*args, **kwargs)~     | ~(format fmt args…)~                      |                                 |
+| ~s.index(sub)~                  | ~(string-search sub s)~                   |                                 |
+| ~s.isalnum()~                   | ~(string-match "^[​[:alnum:]]*$" s)~       |                                 |
+| ~s.isalpha()~                   | ~(string-match "^[​[:alpha:]]*$" s)~       |                                 |
+| ~s.isascii()~                   | ~(string-match "^[​[:ascii:]]*$" s)~       |                                 |
+| ~s.isdecimal()~                 |                                           |                                 |
+| ~s.isdigit()~                   | ~(string-match "^[​[:digit:]]*$" s)~       |                                 |
+| ~s.islower()~                   | ~(string-match "^[​[:lower:]]*$" s)~       | ~case-fold-search~ must be nil. |
+| ~s.isnumeric()~                 |                                           |                                 |
+| ~s.isprintable()~               | ~(string-match "^[​[:print:]]*$" s)~       |                                 |
+| ~s.isspace()~                   | ~(string-match "^[​[:space:]]*$" s)~       |                                 |
+| ~s.istitle()~                   |                                           |                                 |
+| ~s.isupper()~                   | ~(string-match "^[​[:upper:]]*$" s)~       | ~case-fold-search~ must be nil. |
+| ~sep.join(strs)~                | ~(string-join strs sep)~                  |                                 |
+| ~s.ljust(width)~                |                                           |                                 |
+| ~s.lower()~                     | ~(downcase s)~                            |                                 |
+| ~s.lstrip()~                    | ~(string-trim-left s)~                    |                                 |
+| ~s.removeprefix(prefix)~        | ~(string-remove-prefix prefix s)~         |                                 |
+| ~s.removesuffix(suffix)~        | ~(string-remove-suffix suffix s)~         |                                 |
+| ~s.replace(old, new, count=-1)~ | ~(string-replace old new s)~              |                                 |
+| ~s.rfind(sub)~                  |                                           |                                 |
+| ~s.rindex(sub)~                 |                                           |                                 |
+| ~s.rjust(width)~                |                                           |                                 |
+| ~s.rsplit(sep)~                 |                                           |                                 |
+| ~s.rstrip()~                    | ~(string-trim-right s)~                   |                                 |
+| ~s.split(sep)~                  | ~(split-string s sep)~                    |                                 |
+| ~s.splitlines()~                | ~(string-lines s)~                        |                                 |
+| ~s.startswith(prefix)~          | ~(string-prefix-p prefix s)~              |                                 |
+| ~s.strip()~                     | ~(string-trim s)~                         |                                 |
+| ~s.swapcase()~                  |                                           |                                 |
+| ~s.title()~                     | ~(upcase-initials s)~                     |                                 |
+| ~s.upper()~                     | ~(upcase s)~                              |                                 |
+| ~s.zfill(width)~                |                                           |                                 |
+| ~s1 == s2~                      | ~(string-equal s1 s2)~, ~(string= s1 s2)~ |                                 |
+
+*** Regular Expressions
+
+Python and Elisp use different styles of regular expressions (regexps). This document offers no translation of Python regexp style to Elisp. However what is offered is mention of regexp-related calls by both.
+
+#+begin_example
+p: pattern
+r: replacement
+s: string
+#+end_example
+
+| Python          | Elisp                            | Notes                                                                                                                                                                                 |
+|-----------------+----------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ~re.sub(p, r, s)~ | ~(replace-regexp-in-string p r s)~ |                                                                                                                                                                                       |
+| ~re.match(p, s)~  | ~(string-match p s)~               | ~re.match~ and ~string-match~ have different APIs that accomplish the same thing. See [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Simple-Match-Data.html][Simple Match Data (GNU Emacs Lisp Reference Manual)]] for extracting group data from a found match. |
 
 * File I/O
 
@@ -480,4 +493,4 @@ It is left to the reader whether to heed this guidance.
 
 * License
 [[https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/by.svg]]\\
-© 2025. This work is openly licensed via [[https://creativecommons.org/licenses/by/4.0/][CC BY 4.0]]. 
+Copyright 2025-2026 Charles Y. Choi. This work is openly licensed via [[https://creativecommons.org/licenses/by/4.0/][CC BY 4.0]]. 
