@@ -42,6 +42,9 @@ That said, here is some general guidance. Use the comparison function:
 
 Depending on the type of object to compare, you may have to resort to writing a custom comparison function.
 
+Basic ordering of two values of the same type in Elisp can be done with the ~value<~ function.
+
+
 ** Sequence Types
 
 There are three basic sequence types in Python: list, tuple, and range. This document will cover only Elisp translation of Python list and tuple types and subsequent reference to Python sequences should be understood to not include range. For Elisp sequence types, this document will cover list and vector types.
@@ -509,6 +512,45 @@ Although the above examples work as advertised, conventional Elisp wisdom frowns
 2. Pipeline style processing of collections is slow. If you are going to process a large log file, using Elisp is not the right tool for the job.
 
 It is left to the reader whether to heed this guidance.
+
+
+* Common Module Translations
+
+Some translations between Python ~os~ and ~os.path~ methods to Elisp.
+
+#+begin_example
+p: string describing a path
+f: string describing a filename
+d: string describing a directory
+e: string describing an extension
+#+end_example
+
+
+| Python                      | Elisp                                                                                                     | Notes                                                                           |
+|-----------------------------+-----------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------|
+| ~os.listdir(d)~               | ~(directory-files p)~                                                                                       |                                                                                 |
+| ~os.stat(f)~                  | ~(file-attributes f)~                                                                                       | ~stat~ and ~file-attributes~ are not isomorphic.                                    |
+| ~os.getcwd()~                 | ~default-directory~                                                                                         | ~getcwd~ is a function, ~default-directory~ is a variable.                          |
+|                             | ~(directory-files-and-attributes d)~                                                                        | Combines ~directory-files~ and ~file-attributes~.                                   |
+| ~os.path.abspath(p)~          | ~(expand-file-name p)~                                                                                      |                                                                                 |
+| ~os.path.exists(p)~           | ~(file-exists-p p)~                                                                                         |                                                                                 |
+| ~os.path.isfile(p)~           | ~(file-regular-p p)~                                                                                        |                                                                                 |
+| ~os.path.isdir(p)~            | ~(file-directory-p p)~                                                                                      |                                                                                 |
+| ~os.path.islink(p)~           | ~(file-symlink-p p)~                                                                                        |                                                                                 |
+| ~os.path.join(p1, p2)~        | ~(file-name-concat p1 p2)~                                                                                  |                                                                                 |
+| ~os.mkdir(p)~, ~os.makedirs(p)~ | ~(make-directory p)~                                                                                        |                                                                                 |
+| ~os.path.basename(p)~         | ~(car (last (file-name-split p)))~                                                                          |                                                                                 |
+| ~os.path.splitext(f)~         | ~(list (file-name-concat (file-name-directory p) (file-name-base p)) (concat "." (file-name-extension p)))~ | ~splitext~ will include full path, ~file-name-base~ will use ~file-name-nondirectory~ |
+| ~os.path.split(p)[1]~         | ~(file-name-nondirectory p)~                                                                                |                                                                                 |
+| ~os.path.split(p)[0]~         | ~(file-name-directory f)~                                                                                   |                                                                                 |
+|                             | ~(file-name-with-extension f e)~                                                                            |                                                                                 |
+
+Sorting a directory list by modification date, newest first.
+
+#+BEGIN_SRC elisp :lexical no
+  (sort (directory-files-and-attributes d)
+        (lambda (a b) (time-less-p (nth 6 b) (nth 6 a))))
+#+END_SRC
 
 * License
 [[https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/by.svg]]\\
