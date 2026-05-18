@@ -12,7 +12,7 @@ This document is for readers who are familiar with the Python programming langua
 
 ❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged.
 
-Version: 0.5.1
+Version: 0.5.2-rc.1
 
 Author: Charles Y. Choi
 
@@ -529,7 +529,7 @@ e: string describing a file extension
 | Python                      | Elisp                                                                                                     | Notes                                                                           |
 |-----------------------------+-----------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------|
 | ~os.listdir(d)~               | ~(directory-files d)~                                                                                       |                                                                                 |
-| ~os.stat(f)~                  | ~(file-attributes f)~                                                                                       | ~stat~ and ~file-attributes~ are not isomorphic.                                    |
+| ~os.stat(p)~                  | ~(file-attributes p)~                                                                                       | ~stat~ and ~file-attributes~ are not isomorphic.                                    |
 | ~os.getcwd()~                 | ~default-directory~                                                                                         | ~getcwd~ is a function, ~default-directory~ is a variable.                          |
 |                             | ~(directory-files-and-attributes d)~                                                                        | Combines ~directory-files~ and ~file-attributes~.                                   |
 | ~os.path.abspath(p)~          | ~(expand-file-name p)~                                                                                      |                                                                                 |
@@ -540,7 +540,7 @@ e: string describing a file extension
 | ~os.path.join(d, p)~          | ~(file-name-concat d p)~                                                                                    |                                                                                 |
 | ~os.mkdir(p)~, ~os.makedirs(p)~ | ~(make-directory p)~                                                                                        |                                                                                 |
 | ~os.path.basename(p)~         | ~(car (last (file-name-split p)))~                                                                          |                                                                                 |
-| ~os.path.splitext(f)~         | ~(list (file-name-concat (file-name-directory p) (file-name-base p)) (concat "." (file-name-extension p)))~ | ~splitext~ will include full path, ~file-name-base~ will use ~file-name-nondirectory~ |
+| ~os.path.splitext(f)~         | ~(list (file-name-concat (file-name-directory f) (file-name-base f)) (concat "." (file-name-extension f)))~ | ~splitext~ will include full path, ~file-name-base~ will use ~file-name-nondirectory~ |
 | ~os.path.split(f)[1]~         | ~(file-name-nondirectory f)~                                                                                |                                                                                 |
 | ~os.path.split(f)[0]~         | ~(file-name-directory f)~                                                                                   |                                                                                 |
 |                             | ~(file-name-with-extension f e)~                                                                            |                                                                                 |
