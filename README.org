@@ -125,7 +125,7 @@ The following Elisp translations will mutate the original input ~s~.
 | ~s *=n~           | ~(setq s (cl-loop repeat n append s))~                           | ~cl-loop~ needs ~(require 'cl-lib)~.           |
 | ~s.push(x)~       | ~(push x s)~                                                     |                                            |
 | ~s.pop()~         | ~(pop s)~                                                        |                                            |
-| ~s.insert(0, x)~  | ~(push s x)~                                                     |                                            |
+| ~s.insert(0, x)~  | ~(push x s)~                                                     |                                            |
 | ~s.insert(i, x)~  | ~(setq s (append (seq-subseq s 0 i) (cons x (seq-subseq s i))))~ |                                            |
 
 *** Mutating Python Sequence to Elisp Vector Translations
