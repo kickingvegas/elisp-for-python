@@ -516,6 +516,8 @@ It is left to the reader whether to heed this guidance.
 
 * Common Module Translations
 
+** ~os~ and ~os.path~
+
 Some translations between Python ~os~ and ~os.path~ methods to Elisp.
 
 #+begin_example
@@ -551,6 +553,30 @@ Sorting a directory list by modification date, newest first.
   (sort (directory-files-and-attributes d)
         (lambda (a b) (time-less-p (nth 6 b) (nth 6 a))))
 #+END_SRC
+
+
+** URL Components
+
+The parsing of URLs in Python is handled by the ~urllib.parse~ module ([[https://docs.python.org/3/library/urllib.parse.html][urllib.parse]]). The Elisp analog is the URL library ([[info:url#Top]]). These libraries are idiomatic in their handling of URLs, so close reading is highly recommended. That said they both have the same intent: to make working with URLs easier. Listed below are some Python methods with their Elisp function analogs.
+
+#+begin_example
+u: url as string
+urlobj: url object
+s: string
+q: collection of query arguments
+qs: query string
+#+end_example
+
+| Python (~urllib.parse~)       | Elisp                                            | Notes                              |
+|-----------------------------+--------------------------------------------------+------------------------------------|
+| ~urlsplit(u)~                 | ~(url-generic-parse-url u)~                        | This functions are /not/ isomorphic. |
+| ~urlunsplit(urlobj)~          | ~(url-recreate-url urlobj)~                        | This functions are /not/ isomorphic. |
+| ~quote(s)~                    | ~(url-hexify-string s)~                            |                                    |
+| ~unquote(s)~                  | ~(url-unhex-string s)~                             |                                    |
+| ~quote_plus(s)~               | ~(string-replace "%20" "+" (url-hexify-string s))~ |                                    |
+| ~unquote_plus(s)~             | ~(url-unhex-string (string-replace "+" "%20" s))~  |                                    |
+| ~urlencode(q)~                | ~(url-build-query-string q)~                       | This functions are /not/ isomorphic. |
+| ~parse_qs(qs)~, ~parse_qsl(qs)~ | ~(url-parse-query-string qs)~                      | This functions are /not/ isomorphic. |
 
 * License
 [[https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/by.svg]]\\

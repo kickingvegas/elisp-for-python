@@ -11,3 +11,4 @@
 *.~undo-tree
 
 *.html
+/html/
