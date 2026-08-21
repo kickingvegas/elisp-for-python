@@ -12,7 +12,7 @@ This document is for readers who are familiar with the Python programming langua
 
 ❗ This is a *work in progress*. Constructive [[https://github.com/kickingvegas/elisp-for-python/issues][feedback]] is encouraged.
 
-Version: 0.5.4
+Version: 0.5.5-rc.1
 
 Author: Charles Y. Choi
 
@@ -380,56 +380,57 @@ j: integer
 #+end_example
 
 
-| Python                          | Elisp                                     | Notes                           |
-|---------------------------------+-------------------------------------------+---------------------------------|
-| ~""~                            | ~(make-string 0 ? )~, ~""~                |                                 |
-| ~s[i:]~                         | ~(substring s i)~                         |                                 |
-| ~s[i:j]~                        | ~(substring s i j)~                       |                                 |
-| ~s[:j]~                         | ~(substring s nil j)~                     |                                 |
-| ~a + b + c~                     | ~(concat a b c)~                          |                                 |
-| ~s.strip()~                     | ~(string-clean-whitespace s)~             |                                 |
-| ~s.capitalize()~                | ~(capitalize s)~                          |                                 |
-| ~s.casefold()~                  |                                           |                                 |
-| ~s.center(width)~               |                                           |                                 |
-| ~s.count(sub)~                  |                                           |                                 |
-| ~s.encode(encoding)~            |                                           |                                 |
-| ~s.endswith(suffix)~            | ~(string-suffix-p suffix s)~              |                                 |
-| ~s.expandtabs(tabsize)~         |                                           |                                 |
-| ~s.find(sub)~                   | ~(string-search sub s)~                   |                                 |
-| ~s.format(*args, **kwargs)~     | ~(format fmt args…)~                      |                                 |
-| ~s.index(sub)~                  | ~(string-search sub s)~                   |                                 |
-| ~s.isalnum()~                   | ~(string-match "^[​[:alnum:]]*$" s)~       |                                 |
-| ~s.isalpha()~                   | ~(string-match "^[​[:alpha:]]*$" s)~       |                                 |
-| ~s.isascii()~                   | ~(string-match "^[​[:ascii:]]*$" s)~       |                                 |
-| ~s.isdecimal()~                 |                                           |                                 |
-| ~s.isdigit()~                   | ~(string-match "^[​[:digit:]]*$" s)~       |                                 |
-| ~s.islower()~                   | ~(string-match "^[​[:lower:]]*$" s)~       | ~case-fold-search~ must be nil. |
-| ~s.isnumeric()~                 |                                           |                                 |
-| ~s.isprintable()~               | ~(string-match "^[​[:print:]]*$" s)~       |                                 |
-| ~s.isspace()~                   | ~(string-match "^[​[:space:]]*$" s)~       |                                 |
-| ~s.istitle()~                   |                                           |                                 |
-| ~s.isupper()~                   | ~(string-match "^[​[:upper:]]*$" s)~       | ~case-fold-search~ must be nil. |
-| ~sep.join(strs)~                | ~(string-join strs sep)~                  |                                 |
-| ~s.ljust(width)~                |                                           |                                 |
-| ~s.lower()~                     | ~(downcase s)~                            |                                 |
-| ~s.lstrip()~                    | ~(string-trim-left s)~                    |                                 |
-| ~s.removeprefix(prefix)~        | ~(string-remove-prefix prefix s)~         |                                 |
-| ~s.removesuffix(suffix)~        | ~(string-remove-suffix suffix s)~         |                                 |
-| ~s.replace(old, new, count=-1)~ | ~(string-replace old new s)~              |                                 |
-| ~s.rfind(sub)~                  |                                           |                                 |
-| ~s.rindex(sub)~                 |                                           |                                 |
-| ~s.rjust(width)~                |                                           |                                 |
-| ~s.rsplit(sep)~                 |                                           |                                 |
-| ~s.rstrip()~                    | ~(string-trim-right s)~                   |                                 |
-| ~s.split(sep)~                  | ~(split-string s sep)~                    |                                 |
-| ~s.splitlines()~                | ~(string-lines s)~                        |                                 |
-| ~s.startswith(prefix)~          | ~(string-prefix-p prefix s)~              |                                 |
-| ~s.strip()~                     | ~(string-trim s)~                         |                                 |
-| ~s.swapcase()~                  |                                           |                                 |
-| ~s.title()~                     | ~(upcase-initials s)~                     |                                 |
-| ~s.upper()~                     | ~(upcase s)~                              |                                 |
-| ~s.zfill(width)~                |                                           |                                 |
-| ~s1 == s2~                      | ~(string-equal s1 s2)~, ~(string= s1 s2)~ |                                 |
+| Python                        | Elisp                                 | Notes                         |
+|-------------------------------+---------------------------------------+-------------------------------|
+| ~""~                            | ~(make-string 0 ? )~, ~""~                |                               |
+| ~s[i:]~                         | ~(substring s i)~                       |                               |
+| ~s[i:j]~                        | ~(substring s i j)~                     |                               |
+| ~s[:j]~                         | ~(substring s nil j)~                   |                               |
+| ~s[-1]~                         | ~(substring s -1)~                      |                               |
+| ~a + b + c~                     | ~(concat a b c)~                        |                               |
+| ~s.strip()~                     | ~(string-clean-whitespace s)~           |                               |
+| ~s.capitalize()~                | ~(capitalize s)~                        |                               |
+| ~s.casefold()~                  |                                       |                               |
+| ~s.center(width)~               |                                       |                               |
+| ~s.count(sub)~                  |                                       |                               |
+| ~s.encode(encoding)~            |                                       |                               |
+| ~s.endswith(suffix)~            | ~(string-suffix-p suffix s)~            |                               |
+| ~s.expandtabs(tabsize)~         |                                       |                               |
+| ~s.find(sub)~                   | ~(string-search sub s)~                 |                               |
+| ~s.format(*args, **kwargs)~     | ~(format fmt args…)~                    |                               |
+| ~s.index(sub)~                  | ~(string-search sub s)~                 |                               |
+| ~s.isalnum()~                   | ~(string-match "^[​[:alnum:]]*$" s)~     |                               |
+| ~s.isalpha()~                   | ~(string-match "^[​[:alpha:]]*$" s)~     |                               |
+| ~s.isascii()~                   | ~(string-match "^[​[:ascii:]]*$" s)~     |                               |
+| ~s.isdecimal()~                 |                                       |                               |
+| ~s.isdigit()~                   | ~(string-match "^[​[:digit:]]*$" s)~     |                               |
+| ~s.islower()~                   | ~(string-match "^[​[:lower:]]*$" s)~     | ~case-fold-search~ must be nil. |
+| ~s.isnumeric()~                 |                                       |                               |
+| ~s.isprintable()~               | ~(string-match "^[​[:print:]]*$" s)~     |                               |
+| ~s.isspace()~                   | ~(string-match "^[​[:space:]]*$" s)~     |                               |
+| ~s.istitle()~                   |                                       |                               |
+| ~s.isupper()~                   | ~(string-match "^[​[:upper:]]*$" s)~     | ~case-fold-search~ must be nil. |
+| ~sep.join(strs)~                | ~(string-join strs sep)~                |                               |
+| ~s.ljust(width)~                |                                       |                               |
+| ~s.lower()~                     | ~(downcase s)~                          |                               |
+| ~s.lstrip()~                    | ~(string-trim-left s)~                  |                               |
+| ~s.removeprefix(prefix)~        | ~(string-remove-prefix prefix s)~       |                               |
+| ~s.removesuffix(suffix)~        | ~(string-remove-suffix suffix s)~       |                               |
+| ~s.replace(old, new, count=-1)~ | ~(string-replace old new s)~            |                               |
+| ~s.rfind(sub)~                  |                                       |                               |
+| ~s.rindex(sub)~                 |                                       |                               |
+| ~s.rjust(width)~                |                                       |                               |
+| ~s.rsplit(sep)~                 |                                       |                               |
+| ~s.rstrip()~                    | ~(string-trim-right s)~                 |                               |
+| ~s.split(sep)~                  | ~(split-string s sep)~                  |                               |
+| ~s.splitlines()~                | ~(string-lines s)~                      |                               |
+| ~s.startswith(prefix)~          | ~(string-prefix-p prefix s)~            |                               |
+| ~s.strip()~                     | ~(string-trim s)~                       |                               |
+| ~s.swapcase()~                  |                                       |                               |
+| ~s.title()~                     | ~(upcase-initials s)~                   |                               |
+| ~s.upper()~                     | ~(upcase s)~                            |                               |
+| ~s.zfill(width)~                |                                       |                               |
+| ~s1 == s2~                      | ~(string-equal s1 s2)~, ~(string= s1 s2)~ |                               |
 
 *** Regular Expressions
 
